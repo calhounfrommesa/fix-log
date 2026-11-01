@@ -1,67 +1,36 @@
-# Guide: Forcefully Canceling a Stuck Software Center
-Follow these steps in exact order to stop a frozen operating system deployment and clear the stuck "Installing" visual loop.
+# IT Support Fix Log
 
-## Step 0: Login as Admin
+A collection of problems I've troubleshot and fixed, written up as step-by-step guides.
 
-To run this whole process you need to be logged in using your admin account. 
+Each entry records the problem, the symptoms, the root cause, the exact fix, and how I confirmed it worked. That's the same structure I'd use for a help desk ticket or a knowledge base article.
 
-1. Restart PC
-2. Sign-in with the default user
-3. Hold left shift key and sign-out
-4. Sign-in with your credentials as the other user
+## Skills Demonstrated
 
-## Step 1: Forcefully Stop the Core Deployment Windows Services
+- **Windows administration**: services, system cache, local admin access
+- **Command line**: Command Prompt and PowerShell (including CIM/WMI)
+- **Endpoint management**: Microsoft Configuration Manager (SCCM / MECM) and Software Center
+- **Security**: BitLocker and TPM protector management with `manage-bde`
+- **Troubleshooting method**: isolate the cause, fix it in a safe order, and verify the result
+- **Technical writing**: clear, repeatable documentation for end users and other technicians
 
-This breaks the underlying data pipeline feeding the installer.
+## Fixes
 
-1. Click the Start Menu, type cmd.
-2. Right click Command Prompt and select Run as Administrator.
-3. Run the following three commands one by one, pressing Enter after each:
+| Fix | Category | Platform |
+|---|---|---|
+| [Software Center Stuck on "Installing"](fixes/software-center-stuck-install.md) | Software Deployment / Windows Update | Windows + SCCM/MECM |
+| [BitLocker Recovery Prompt on Every Boot After 24H2 Upgrade](fixes/bitlocker-recovery-after-24h2.md) | Security / Disk Encryption | Windows 11 24H2 |
 
-   ```cmd
-   net stop wuauserv
-   net stop bits
-   net stop cryptsvc
-   ```
+## How Each Fix Is Structured
 
-   Use code with caution.
+1. **Problem**: what the user reported
+2. **Symptoms**: what I observed
+3. **Root Cause**: why it happened
+4. **Resolution**: the exact steps and commands
+5. **Verification**: how I confirmed it was fixed
+6. **Notes**: caveats and follow-up checks
 
-## Step 2: Clear the Update Cache Files
+New entries follow the [fix template](fixes/_TEMPLATE.md).
 
-This completely wipes out the temporary update container to ensure the system doesn't try to automatically pick up where it left off.
+## Disclaimer
 
-1. In the same Command Prompt window, type the following command and press Enter (it runs silently if successful):
-
-   ```cmd
-   rd /s /q %windir%\SoftwareDistribution\DataStore
-   ```
-
-   Use code with caution.
-
-## Step 3: Switch to PowerShell and Drop the Stuck Task Request
-
-Software Center uses its own database (WMI/CIM) to track progress. To drop the stuck task execution request across modern versions of PowerShell, you must use CIM instance commands.
-
-1. Click the Start Menu, type powershell.
-2. Right click Powershell and select Run as Administrator (the prompt changes to show a PS prefix).
-2. Type this command to delete the stuck task request, then press Enter:
-
-   ```powershell
-   Get-CimInstance -Namespace root\ccm\SoftMgmtAgent -ClassName CCM_TSExecutionRequest | Remove-CimInstance
-   ```
-
-   Use code with caution.
-
-## Step 4: Refresh the Software Center Background Agent
-
-This forces the local Software Center client to apply the changes and pull a completely fresh status report.
-
-1. Still in Powershell type the following command and press Enter:
-
-   ```powershell
-   Restart-Service ccmexec -Force
-   ```
-
-   Use code with caution.
-
-2. Restart the PC and you should see that the Software Center says the Windows Update failed/installed and you can try installing it again. 
+These guides reflect environments I've worked in. Always test in your own environment, and follow your organization's change-management policies before you run admin commands on production machines.
